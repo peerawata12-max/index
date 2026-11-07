@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071426">
+<title>Push-up Counter | ตัวนับวิดพื้น</title>
+<style>
+:root{color-scheme:dark;--bg:#071426;--panel:#10233e;--panel2:#162d4e;--blue:#3b82f6;--cyan:#67e8f9;--muted:#9db1cc;--line:#284466}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#15345c 0,#071426 55%);color:#eef6ff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:760px;margin:auto;padding:22px 16px 40px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.brand{font-weight:900;letter-spacing:.08em;color:#bfdbfe;font-size:14px}.tag{font-size:12px;color:#bfdbfe;border:1px solid #315780;padding:6px 10px;border-radius:99px}
+h1{font-size:clamp(27px,6vw,40px);margin:6px 0}.sub{color:var(--muted);margin:0 0 20px;font-size:14px}
+.card{background:linear-gradient(145deg,#102541,#0c1b30);border:1px solid var(--line);border-radius:22px;padding:16px;margin:14px 0;box-shadow:0 14px 35px #0003}
+.counter{display:flex;align-items:center;justify-content:space-between;gap:10px}.count{font-size:clamp(64px,17vw,100px);font-weight:850;line-height:1;color:#7dd3fc;font-variant-numeric:tabular-nums}.unit{color:var(--muted);font-size:14px}
+.goal{font-size:13px;color:#c4d7ef}.bar{height:10px;background:#203957;border-radius:20px;overflow:hidden;margin-top:9px}.fill{height:100%;width:0;background:linear-gradient(90deg,#2563eb,#67e8f9);transition:width .2s}
+.video-wrap{position:relative;background:#020812;border-radius:16px;overflow:hidden;aspect-ratio:4/3;border:1px solid #29496d}
+video,canvas{position:absolute;width:100%;height:100%;inset:0;object-fit:cover;transform:scaleX(-1)}canvas{pointer-events:none}
+.placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#9db1cc;padding:20px;font-size:14px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}
+label{display:block;color:#bfd0e5;font-size:13px;margin:0 0 7px}
+select,button{font:inherit;border-radius:13px;padding:12px;border:1px solid #315174;background:#132a47;color:#eef6ff;width:100%}
+button{font-weight:750;cursor:pointer;transition:.15s}button.primary{background:linear-gradient(100deg,#2563eb,#0ea5e9);border:0}button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.status{display:flex;align-items:center;gap:8px;color:#c8d9ed;font-size:13px;margin-top:12px}.dot{width:9px;height:9px;border-radius:50%;background:#64748b}.dot.live{background:#34d399;box-shadow:0 0 12px #34d399}
+.hint{font-size:13px;line-height:1.6;color:#a9bdd5}.hint b{color:#e5f2ff}.tips{padding-left:19px;margin:8px 0 0}.tips li{margin:5px 0}
+@media(max-width:480px){main{padding:17px 12px 30px}.card{padding:14px}.controls{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><div class="brand">PUSH-UP LAB</div><div class="tag">CAMERA · AUTO COUNT</div></div>
+  <h1>ตัวนับวิดพื้นอัตโนมัติ</h1>
+  <p class="sub">ใช้กล้องตรวจจับท่าทางและนับเมื่อทำครบหนึ่งรอบ</p>
+
+  <section class="card">
+    <div class="counter"><div><div class="unit">จำนวนครั้งที่ทำได้</div><div class="count" id="count">0</div><div class="unit">ครั้ง</div></div><div style="text-align:right"><div class="goal">เป้าหมาย</div><div style="font-size:28px;font-weight:800;color:#dbeafe">100</div><div class="unit">ครั้ง</div></div></div>
+    <div class="goal" style="margin-top:14px"><span id="progressText">0% ของเป้าหมาย</span></div><div class="bar"><div class="fill" id="progress"></div></div>
+  </section>
+
+  <section class="card">
+    <div class="video-wrap">
+      <video id="video" playsinline muted></video>
+      <canvas id="canvas"></canvas>
+      <div class="placeholder" id="placeholder">เปิดกล้องเพื่อเริ่มตรวจจับท่าทาง<br>จัดโทรศัพท์ให้เห็นลำตัวและแขน</div>
+    </div>
+    <div class="status"><span class="dot" id="dot"></span><span id="status">ยังไม่ได้เปิดกล้อง</span></div>
+    <div class="controls">
+      <div><label for="angleMode">มุมกล้อง</label><select id="angleMode"><option value="side">ด้านข้าง</option><option value="front">ด้านหน้า</option></select></div>
+      <div><label for="cameraMode">กล้องโทรศัพท์</label><select id="cameraMode"><option value="environment">กล้องหลัง</option><option value="user">กล้องหน้า</option></select></div>
+    </div>
+    <div class="actions"><button class="primary" id="start">เปิดกล้องและเริ่ม</button><button id="stop" disabled>ปิดกล้อง</button></div>
+    <div class="actions"><button id="reset">รีเซ็ตจำนวน</button><button id="goalBtn">เป้าหมาย: 100</button></div>
+  </section>
+
+  <section class="card">
+    <b>วิธีใช้งาน</b>
+    <ol class="tips hint">
+      <li>วางโทรศัพท์ให้นิ่ง ห่างพอที่จะเห็นตั้งแต่ไหล่ถึงข้อเท้า</li>
+      <li>เลือกมุมด้านข้างหรือด้านหน้า แล้วกดเปิดกล้อง</li>
+      <li>เริ่มจากท่าแขนเหยียด ลดตัวลง แล้วดันกลับขึ้นจนแขนเหยียด</li>
+      <li>ระบบจะนับเมื่อเห็นการลงและกลับขึ้นครบหนึ่งรอบ</li>
+    </ol>
+    <p class="hint"><b>หมายเหตุ:</b> การตรวจจับเป็นการประเมินจากภาพ อาจนับคลาดเคลื่อนได้หากแสงน้อย กล้องสั่น หรือมีสิ่งบังร่างกาย ใช้เป็นตัวช่วยติดตาม ไม่ใช่การวัดท่าทางที่แม่นยำทางการแพทย์</p>
+  </section>
+  <p class="hint" style="text-align:center">ภาพจากกล้องประมวลผลบนอุปกรณ์ผ่านเบราว์เซอร์ ไม่ได้ส่งไปเก็บบนเซิร์ฟเวอร์ของเว็บไซต์นี้</p>
+</main>
+<script type="module">
+import { FilesetResolver, PoseLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+const video=document.getElementById('video'), canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
+const countEl=document.getElementById('count'), progress=document.getElementById('progress'), progressText=document.getElementById('progressText');
+const statusEl=document.getElementById('status'), dot=document.getElementById('dot'), placeholder=document.getElementById('placeholder');
+const startBtn=document.getElementById('start'), stopBtn=document.getElementById('stop'), angleMode=document.getElementById('angleMode'), cameraMode=document.getElementById('cameraMode');
+let stream=null, landmarker=null, running=false, raf=0, count=0, phase='up', lastVideoTime=-1, lastCountAt=0, busy=false;
+const $=id=>document.getElementById(id);
+function setStatus(msg,live=false){statusEl.textContent=msg;dot.classList.toggle('live',live)}
+function setCount(n){count=n;countEl.textContent=n;const pct=Math.min(100,n);progress.style.width=pct+'%';progressText.textContent=pct+'% ของเป้าหมาย'}
+function angle(a,b,c){const v1=[a.x-b.x,a.y-b.y],v2=[c.x-b.x,c.y-b.y];const dotp=v1[0]*v2[0]+v1[1]*v2[1];const m1=Math.hypot(...v1),m2=Math.hypot(...v2);return Math.acos(Math.max(-1,Math.min(1,dotp/(m1*m2))))*180/Math.PI}
+function visible(p){return p && (p.visibility??1)>.5}
+function pickAngle(p){
+  const left=visible(p[11])&&visible(p[13])&&visible(p[15])?angle(p[11],p[13],p[15]):null;
+  const right=visible(p[12])&&visible(p[14])&&visible(p[16])?angle(p[12],p[14],p[16]):null;
+  if(angleMode.value==='side') return left===null?right:right===null?left:Math.max(left,right);
+  if(left!==null&&right!==null)return (left+right)/2;
+  return left??right;
+}
+function drawPose(result){
+  canvas.width=video.videoWidth||640;canvas.height=video.videoHeight||480;ctx.clearRect(0,0,canvas.width,canvas.height);
+  const p=result.landmarks?.[0];if(!p)return;
+  const links=[[11,13],[13,15],[12,14],[14,16],[11,12],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+  ctx.lineWidth=4;ctx.strokeStyle='#67e8f9';ctx.fillStyle='#f8fafc';
+  for(const [a,b] of links){if(visible(p[a])&&visible(p[b])){ctx.beginPath();ctx.moveTo(p[a].x*canvas.width,p[a].y*canvas.height);ctx.lineTo(p[b].x*canvas.width,p[b].y*canvas.height);ctx.stroke()}}
+  for(const i of [11,12,13,14,15,16,23,24,25,26,27,28])if(visible(p[i])){ctx.beginPath();ctx.arc(p[i].x*canvas.width,p[i].y*canvas.height,5,0,Math.PI*2);ctx.fill()}
+}
+function process(result){
+  drawPose(result);
+  const p=result.landmarks?.[0];if(!p)return;
+  const elbow=pickAngle(p);if(elbow===null||!Number.isFinite(elbow)){setStatus('ขยับให้เห็นหัวไหล่ ข้อศอก และข้อมือ');return}
+  const bodyOK=[11,12,23,24].some(i=>visible(p[i]));
+  if(!bodyOK)return;
+  if(elbow<95){phase='down';setStatus('ลงได้อีกนิด แล้วดันขึ้น',true)}
+  else if(elbow>155&&phase==='down'){
+    const now=performance.now();
+    if(now-lastCountAt>650){setCount(count+1);lastCountAt=now}
+    phase='up';setStatus('นับแล้ว! ทำต่อได้เลย',true);
+  }else if(elbow>145){phase='up';setStatus('ท่าแขนเหยียด พร้อมเริ่ม',true)}
+  else setStatus('กำลังตรวจจับท่าทาง…',true);
+}
+async function loadModel(){
+  if(landmarker)return;
+  setStatus('กำลังโหลดระบบตรวจจับ…');
+  const vision=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  landmarker=await PoseLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',delegate:'GPU'},runningMode:'VIDEO',numPoses:1,minPoseDetectionConfidence:.55,minPosePresenceConfidence:.55,minTrackingConfidence:.55});
+}
+async function loop(){
+  if(!running)return;
+  if(video.readyState>=2&&video.currentTime!==lastVideoTime&&!busy){
+    lastVideoTime=video.currentTime;busy=true;
+    try{const result=landmarker.detectForVideo(video,performance.now());process(result)}catch(e){console.error(e)}finally{busy=false}
+  }
+  raf=requestAnimationFrame(loop);
+}
+async function start(){
+  startBtn.disabled=true;
+  try{
+    if(!navigator.mediaDevices?.getUserMedia)throw new Error('เบราว์เซอร์นี้เปิดกล้องไม่ได้ กรุณาเปิดผ่าน HTTPS และอนุญาตการใช้กล้อง');
+    await loadModel();
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:cameraMode.value},width:{ideal:1280},height:{ideal:720}},audio:false});
+    video.srcObject=stream;await video.play();running=true;placeholder.style.display='none';stopBtn.disabled=false;angleMode.disabled=true;cameraMode.disabled=true;setStatus('เปิดกล้องแล้ว จัดท่าให้เห็นแขนและลำตัว',true);loop();
+  }catch(e){console.error(e);setStatus(e.name==='NotAllowedError'?'ไม่ได้รับอนุญาตให้ใช้กล้อง':e.message||'เปิดกล้องไม่สำเร็จ');alert('เริ่มใช้งานไม่ได้: '+(e.message||e.name)+'\\nตรวจสอบสิทธิ์กล้องและการเชื่อมต่ออินเทอร์เน็ต');}
+  finally{startBtn.disabled=false}
+}
+function stop(){running=false;cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;video.srcObject=null;ctx.clearRect(0,0,canvas.width,canvas.height);placeholder.style.display='grid';stopBtn.disabled=true;angleMode.disabled=false;cameraMode.disabled=false;setStatus('ปิดกล้องแล้ว')}
+startBtn.addEventListener('click',start);stopBtn.addEventListener('click',stop);
+$('reset').addEventListener('click',()=>{setCount(0);phase='up';lastCountAt=0;setStatus(running?'รีเซ็ตแล้ว พร้อมเริ่มนับ':'รีเซ็ตจำนวนแล้ว',running)});
+$('goalBtn').addEventListener('click',()=>alert('เป้าหมายปัจจุบัน 100 ครั้ง\\nแถบความคืบหน้าจะแสดงตามจำนวนที่ทำได้'));
+window.addEventListener('pagehide',stop);
+</script>
+</body>
+</html>
